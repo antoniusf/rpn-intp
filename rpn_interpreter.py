@@ -98,6 +98,7 @@ def parse(inp):
                 else:
                     if content in variables:
                         enter(values[variables.index(content)])
+                        print "["+str(values[variables.index(content)])+"]"
                     else:
                         print "Name Error: "+content+" is not defined"
                         return 0
@@ -163,6 +164,4 @@ def parse(inp):
 if __name__ == "__main__":
     while True:
         inp = raw_input(":>")
-        a = str_eval(inp)
-        if a == 1:
-            break
+        a = parse(inp)
