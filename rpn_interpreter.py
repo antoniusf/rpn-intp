@@ -1,6 +1,8 @@
 import itertools
 
 stack = [0,0,0,0,0]
+variables = []
+values = []
 
 def enter(number):
     global stack
@@ -75,6 +77,41 @@ def analyze(inp):
         t_contents.append(t_content)
     return tokens, t_contents
 
+def parse(inp):
+    token_stream = analyze(inp)
+    if token_stream != 0:
+        tokens, contents = token_stream
+        l = len(tokens)
+        for i in range(0,l):
+            token = tokens[i]
+            content = contents[i]
+            if token == 0:
+                enter(float(content))
+            elif token == 1:
+                if i < (l-1):
+                    if tokens[i+1] == 3:
+                        if content in variables:
+                            values[variables.index(content)]=stack[0]
+                        else:
+                            variables.append(content)
+                            values.append(stack[0])
+                else:
+                    if content in variables:
+                        enter(values[variables.index(content)])
+                    else:
+                        print "Name Error: "+content+" is not defined"
+                        return 0
+            elif token == 2:
+                return content
+            elif token == 4:
+                if content in ["+","-","*","/","%","&","|","^","~","<",">","**","//","<=",">=","==","!="]:
+                    compute(content)
+                elif content == "#":
+                    stack[0] = 1/stack[0]
+                    compute("**")
+                else:
+                    print "Operation Error: operator "+content+" is not existing"
+                    return 0
 ##def str_eval(inp):
 ##    inp += " "
 ##    num = None
