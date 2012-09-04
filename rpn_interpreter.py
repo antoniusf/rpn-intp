@@ -11,7 +11,7 @@ def enter(number):
 
 def compute(operator):
     global stack
-    res = eval(str(stack[1])+operator+str(stack[0]))
+    res = eval("("+str(stack[1])+")"+operator+"("+str(stack[0])+")")
     stack = list(itertools.chain([res],stack[2:5],[0]))
     print "["+str(stack[0])+"]"
 
@@ -88,13 +88,12 @@ def parse(inp):
             if token == 0:
                 enter(float(content))
             elif token == 1:
-                if i < (l-1):
-                    if tokens[i+1] == 3:
-                        if content in variables:
-                            values[variables.index(content)]=stack[0]
-                        else:
-                            variables.append(content)
-                            values.append(stack[0])
+                if i < (l-1) and tokens[i+1] == 3:
+                    if content in variables:
+                        values[variables.index(content)]=stack[0]
+                    else:
+                        variables.append(content)
+                        values.append(stack[0])
                 else:
                     if content in variables:
                         enter(values[variables.index(content)])
