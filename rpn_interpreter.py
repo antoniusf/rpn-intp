@@ -3,6 +3,7 @@ import itertools
 stack = [0,0,0,0,0]
 variables = []
 values = []
+string = ""
 
 def enter(number):
     global stack
@@ -19,11 +20,15 @@ def analyze(inp):
     pre_tokens = inp.split(" ")
     tokens = []
     t_contents = []
+    string_set = False
     for pt in pre_tokens:
         t_content = ""
         token_type = None
         for pt_elem in pt:
-            if pt_elem in ["1","2","3","4","5","6","7","8","9","0","."]:
+            if string_set == True:
+                t_content = pt_elem
+                token_type = 2
+            elif pt_elem in ["1","2","3","4","5","6","7","8","9","0",".","-"]:
                 if token_type == None or token_type == 0:
                     token_type = 0#0 := number
                     if pt_elem == ".":
@@ -34,6 +39,11 @@ def analyze(inp):
                     t_content += pt_elem
                 elif token_type == 1:#1 := identifier
                     t_content += pt_elem
+                elif token_type == 2:
+                    t_content += pt_elem
+                if pt_elem == "-":
+                    if len(pt) == 1:
+                        token_type = 4
             elif pt_elem in ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","_"]:
                 if token_type == None or token_type == 1:
                     token_type = 1
@@ -54,12 +64,16 @@ def analyze(inp):
                 elif token_type == 3:
                     token_type = 4
                     t_content += pt_elem
+                elif token_type == 2:
+                    t_content += pt_elem
                 else:
                     print "Syntax Error"
                     return 0
             elif pt_elem in ["+","-","*","/","%","&","|","^","~","<",">","#","!"]:
                 if token_type == None or token_type == 4:#4 := (binary) operator
                     token_type = 4
+                    t_content += pt_elem
+                elif token_type == 2:
                     t_content += pt_elem
                 else:
                     print "Syntax Error"
@@ -78,6 +92,7 @@ def analyze(inp):
     return tokens, t_contents
 
 def parse(inp):
+    global string
     token_stream = analyze(inp)
     if token_stream != 0:
         tokens, contents = token_stream
@@ -90,19 +105,27 @@ def parse(inp):
             elif token == 1:
                 if i < (l-1) and tokens[i+1] == 3:
                     if content in variables:
-                        values[variables.index(content)]=stack[0]
+                        if string != "":
+                            values[variables.index(content)]=string
+                            string = ""
+                        else:
+                            values[variables.index(content)]=stack[0]
                     else:
                         variables.append(content)
-                        values.append(stack[0])
+                        if string != "":
+                            values.append(string)
+                            string = ""
+                        else:
+                            values.append(stack[0])
                 else:
                     if content in variables:
-                        enter(values[variables.index(content)])
+                        parse(str(values[variables.index(content)]))
                         print "["+str(values[variables.index(content)])+"]"
                     else:
                         print "Name Error: "+content+" is not defined"
                         return 0
             elif token == 2:
-                return content
+                string += content
             elif token == 4:
                 if content in ["+","-","*","/","%","&","|","^","~","<",">","**","//","<=",">=","==","!="]:
                     compute(content)
