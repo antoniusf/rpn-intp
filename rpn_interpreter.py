@@ -1,9 +1,9 @@
-import itertools
+import itertools, math, operator as op, re
 
 stack = [0,0,0,0,0]
 variables = []
 values = []
-string = ""
+varstack = []
 
 def enter(number):
     global stack
@@ -12,178 +12,90 @@ def enter(number):
 
 def compute(operator):
     global stack
-    res = eval("("+str(stack[1])+")"+operator+"("+str(stack[0])+")")
-    stack = list(itertools.chain([res],stack[2:5],[0]))
+    if operator not in funcarg1:
+        res = functions[operator](stack[1],stack[0])
+        stack = list(itertools.chain([res],stack[2:5],[0]))
+    else:
+        res = functions[operator](stack[0])
+        stack[0] = res
     print "["+str(stack[0])+"]"
 
-def analyze(inp):
-    pre_tokens = inp.split(" ")
-    tokens = []
-    t_contents = []
-    string_set = False
-    for pt in pre_tokens:
-        t_content = ""
-        token_type = None
-        for pt_elem in pt:
-            if string_set == True:
-                t_content = pt_elem
-                token_type = 2
-            elif pt_elem in ["1","2","3","4","5","6","7","8","9","0",".","-"]:
-                if token_type == None or token_type == 0:
-                    token_type = 0#0 := number
-                    if pt_elem == ".":
-                        if "." in t_content:
-                            pt_elem = ""
-                        elif t_content == "":
-                            pt_elem = "0."
-                    t_content += pt_elem
-                elif token_type == 1:#1 := identifier
-                    t_content += pt_elem
-                elif token_type == 2:
-                    t_content += pt_elem
-                if pt_elem == "-":
-                    if len(pt) == 1:
-                        token_type = 4
-            elif pt_elem in ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","_"]:
-                if token_type == None or token_type == 1:
-                    token_type = 1
-                    t_content += pt_elem
-                elif token_type == 2:#2 := string
-                    t_content += pt_elem
-            elif pt_elem == '"':
-                if token_type == None:
-                    token_type = 2
-                elif token_type == 2:
-                    break
-            elif pt_elem == "=":
-                if token_type == None:
-                    token_type = 3#3 := assignment
-                    t_content += pt_elem
-                elif token_type == 4:
-                    t_content += pt_elem
-                elif token_type == 3:
-                    token_type = 4
-                    t_content += pt_elem
-                elif token_type == 2:
-                    t_content += pt_elem
-                else:
-                    print "Syntax Error"
-                    return 0
-            elif pt_elem in ["+","-","*","/","%","&","|","^","~","<",">","#","!"]:
-                if token_type == None or token_type == 4:#4 := (binary) operator
-                    token_type = 4
-                    t_content += pt_elem
-                elif token_type == 2:
-                    t_content += pt_elem
-                else:
-                    print "Syntax Error"
-                    return 0
-            elif pt_elem in ['\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08', '\t', '\n', '\x0b', '\x0c', '\r', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f', ' ', '!', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~']:
-                if token_type == 2:
-                    t_content += pt_elem
-                else:
-                    print "Syntax Error"
-                    return 0#means here error
-            else:
-                print "Syntax Error"
-                return 0
-        tokens.append(token_type)
-        t_contents.append(t_content)
-    return tokens, t_contents
+def assign(number):
+    global varstack
+    global variables
+    global values
+    try:
+        var = varstack.pop()
+    except IndexError:
+        print "no variable to assign"
+        return
+    if var in variables:
+        values[variables.index(var)] = number
+    else:
+        variables.append(var)
+        values.append(number)
+    return number
+
+functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
+             "**":op.pow, "//":op.floordiv, "%":op.mod, "#": lambda m,e:m**(1/e),
+             "&":op.and_, "|":op.or_, "^":op.xor, "~":op.inv,
+             "abs":op.abs, "neg":op.neg, "ceil":math.ceil, "floor":math.floor,
+             "sin":math.sin, "sinh":math.sinh, "asin":math.asin, "asinh":math.asinh,
+             "cos":math.cos, "cosh":math.cosh, "acos":math.acos, "acosh":math.acosh,
+             "tan":math.tan, "tanh":math.tanh, "atan":math.atan, "atanh":math.atanh,
+             "hypot":math.hypot, "frexp":math.frexp, "ldexp":math.ldexp, "log":math.log,
+             "rad":math.radians, "deg":math.degrees, "fac":math.factorial,
+             "=":assign}
+funcarg1 = ["~","abs","neg","ceil","floor","sin","sinh","asin","asinh",
+            "cos","cosh","acos","acosh","tan","tanh","atan","atanh","frexp",
+            "ldexp","rad","deg","fac","="]
+
+def tokenizer(inp):
+    tokens = inp.split(" ")
+    number_re = re.compile(r"""[0-9]*\.?[0-9]+""")
+    symbol_re = re.compile(r"""\$?\w+""")
+    alltokens = []
+    alltokentypes = []
+    for token in tokens:
+        if number_re.match(token) != None:
+            alltokens.append(number_re.match(token).group())
+            alltokentypes.append(0)
+        elif symbol_re.match(token) != None:
+            alltokens.append(symbol_re.match(token).group())
+            alltokentypes.append(1)
+        elif token in ["=","*","+","-","/","&","%","|","^","~","**","//","#"]:
+            alltokens.append(token)
+            alltokentypes.append(2)
+        else:
+            print "unknown expression."
+    return alltokens, alltokentypes
 
 def parse(inp):
-    global string
-    token_stream = analyze(inp)
-    if token_stream != 0:
-        tokens, contents = token_stream
-        l = len(tokens)
-        for i in range(0,l):
-            token = tokens[i]
-            content = contents[i]
-            if token == 0:
-                enter(float(content))
-            elif token == 1:
-                if i < (l-1) and tokens[i+1] == 3:
-                    if content in variables:
-                        if string != "":
-                            values[variables.index(content)]=string
-                            string = ""
-                        else:
-                            values[variables.index(content)]=stack[0]
-                    else:
-                        variables.append(content)
-                        if string != "":
-                            values.append(string)
-                            string = ""
-                        else:
-                            values.append(stack[0])
-                else:
-                    if content in variables:
-                        parse(str(values[variables.index(content)]))
-                        print "["+str(values[variables.index(content)])+"]"
-                    else:
-                        print "Name Error: "+content+" is not defined"
-                        return 0
-            elif token == 2:
-                string += content
-            elif token == 4:
-                if content in ["+","-","*","/","%","&","|","^","~","<",">","**","//","<=",">=","==","!="]:
-                    compute(content)
-                elif content == "#":
-                    stack[0] = 1/stack[0]
-                    compute("**")
-                else:
-                    print "Operation Error: operator "+content+" is not existing"
-                    return 0
-##def str_eval(inp):
-##    inp += " "
-##    num = None
-##    op = None
-##    chartype = None
-##    for char in inp:
-##        if char in ["0","1","2","3","4","5","6","7","8","9","."]:
-##            if chartype == 0:#chartype 0 := number
-##                if char == ".":
-##                    if char in num:
-##                        char = ""
-##                num += char
-##            elif chartype == 1:#chartype 1 := operator
-##                if char == ".":
-##                    char = "0."
-##                num = char
-##                chartype = 0
-##                compute(op)
-##                op = None
-##            elif chartype == None:
-##                if char == ".":
-##                    char = "0."
-##                num = char
-##                chartype = 0
-##        elif char in ["+","-","*","/","//","%","**"]:
-##            if chartype == 1:
-##                op += char
-##            elif chartype == 0:
-##                op = char
-##                chartype = 1
-##                if num[-1] == ".":
-##                    num += 0
-##                enter(float(num))
-##                num = None
-##            elif chartype == None:
-##                op = char
-##                chartype = 1
-##        elif char in [" "]:
-##            if chartype == 0:
-##                enter(float(num))
-##                num = None
-##            elif chartype == 1:
-##                compute(op)
-##                op = None
-##            chartype = None
-##        elif char == "q":
-##            return 1
+    global varstack
+    alltokens, alltokentypes = tokenizer(inp)
+    for i in range(len(alltokens)):
+        token = alltokens[i]
+        tType = alltokentypes[i]
+        if tType == 0:
+            enter(float(token))
+        elif tType == 2:
+            compute(token)
+        elif tType == 1:
+            if token[0] == "$":
+                if token in variables:
+                    varstack.insert(0,token)
+                    enter(values[variables.index(token)])
+                    print "["+str(values[variables.index(token)])+"]"
+                elif token not in variables:
+                    varstack.insert(0,token)
+            else:
+                parse(token)
 
 if __name__ == "__main__":
+    print "Zwiebel 0.01"
     while True:
-        inp = raw_input(":>")
-        a = parse(inp)
+        try:
+            inp = raw_input(":>")
+            parse(inp)
+        except EOFError:
+            break
