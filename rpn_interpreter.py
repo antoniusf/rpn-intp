@@ -4,6 +4,7 @@ stack = [0,0,0,0,0]
 variables = []
 values = []
 varstack = []
+TRACE = True#enable display of pre-results
 
 def enter(number):
     global stack
@@ -18,14 +19,15 @@ def compute(operator):
     else:
         res = functions[operator](stack[0])
         stack[0] = res
-    print "["+str(stack[0])+"]"
+    if TRACE == True:
+        print "["+str(stack[0])+"]"
 
 def assign(number):
     global varstack
     global variables
     global values
     try:
-        var = varstack.pop()
+        var = varstack.pop(0)
     except IndexError:
         print "no variable to assign"
         return
@@ -36,6 +38,24 @@ def assign(number):
         values.append(number)
     return number
 
+def toggle_trace(number):
+    global TRACE
+    if TRACE:
+        TRACE = False
+        print "tracing is off"
+    else:
+        TRACE = True
+        print "tracing is on"
+    return number
+
+def x(number):
+    global stack
+    s0 = stack[0]
+    s1 = stack[1]
+    stack[0] = s1
+    stack[1] = s0
+    return s1
+
 functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
              "**":op.pow, "//":op.floordiv, "%":op.mod, "#": lambda m,e:m**(1/e),
              "&":op.and_, "|":op.or_, "^":op.xor, "~":op.inv,
@@ -45,14 +65,14 @@ functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
              "tan":math.tan, "tanh":math.tanh, "atan":math.atan, "atanh":math.atanh,
              "hypot":math.hypot, "frexp":math.frexp, "ldexp":math.ldexp, "log":math.log,
              "rad":math.radians, "deg":math.degrees, "fac":math.factorial,
-             "=":assign}
+             "=":assign, "trace":toggle_trace, "x":x}
 funcarg1 = ["~","abs","neg","ceil","floor","sin","sinh","asin","asinh",
             "cos","cosh","acos","acosh","tan","tanh","atan","atanh","frexp",
-            "ldexp","rad","deg","fac","="]
+            "ldexp","rad","deg","fac","=","trace","x"]
 
 def tokenizer(inp):
     tokens = inp.split(" ")
-    number_re = re.compile(r"""[0-9]*\.?[0-9]+""")
+    number_re = re.compile(r"""-?[0-9]*\.?[0-9]+""")
     symbol_re = re.compile(r"""\$?\w+""")
     alltokens = []
     alltokentypes = []
@@ -85,11 +105,15 @@ def parse(inp):
                 if token in variables:
                     varstack.insert(0,token)
                     enter(values[variables.index(token)])
-                    print "["+str(values[variables.index(token)])+"]"
+                    if TRACE == True:
+                        print "["+str(values[variables.index(token)])+"]"
                 elif token not in variables:
                     varstack.insert(0,token)
             else:
-                parse(token)
+                if token in functions.keys():
+                    compute(token)
+    if TRACE == False:
+        print "["+str(stack[0])+"]"
 
 if __name__ == "__main__":
     print "Zwiebel 0.01"
