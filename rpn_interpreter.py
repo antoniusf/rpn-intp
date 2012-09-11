@@ -1,3 +1,6 @@
+#Information: the writing style of this program was inspired by Peter Norvigs
+#lis.py. Without this program I probably wouldn't have written a second version.
+#Thank you.
 import itertools, math, operator as op, re
 
 stack = [0,0,0,0,0]
@@ -56,6 +59,9 @@ def x(number):
     stack[1] = s0
     return s1
 
+def function(exp):
+    return lambda number: parse(exp)
+
 functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
              "**":op.pow, "//":op.floordiv, "%":op.mod, "#": lambda m,e:m**(1/e),
              "&":op.and_, "|":op.or_, "^":op.xor, "~":op.inv,
@@ -68,7 +74,7 @@ functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
              "=":assign, "trace":toggle_trace, "x":x}
 funcarg1 = ["~","abs","neg","ceil","floor","sin","sinh","asin","asinh",
             "cos","cosh","acos","acosh","tan","tanh","atan","atanh","frexp",
-            "ldexp","rad","deg","fac","=","trace","x"]
+            "ldexp","rad","deg","fac","=","trace","x",]
 
 def tokenizer(inp):
     tokens = inp.split(" ")
@@ -83,7 +89,7 @@ def tokenizer(inp):
         elif symbol_re.match(token) != None:
             alltokens.append(symbol_re.match(token).group())
             alltokentypes.append(1)
-        elif token in ["=","*","+","-","/","&","%","|","^","~","**","//","#"]:
+        elif token in ["=","*","+","-","/","&","%","|","^","~","**","//","#",":"]:
             alltokens.append(token)
             alltokentypes.append(2)
         else:
@@ -93,6 +99,7 @@ def tokenizer(inp):
 def parse(inp):
     global varstack
     alltokens, alltokentypes = tokenizer(inp)
+    funcdef = False
     for i in range(len(alltokens)):
         token = alltokens[i]
         tType = alltokentypes[i]
@@ -112,6 +119,17 @@ def parse(inp):
             else:
                 if token in functions.keys():
                     compute(token)
+                else:
+                    funcname = token
+                    exp = alltokens[i+2:]
+                    expstr = ""
+                    for el in exp:
+                        expstr += el+" "
+                    print expstr
+                    functions.update({funcname:function(expstr)})
+                    funcarg1.append(funcname)
+                    break
+                    
     if TRACE == False:
         print "["+str(stack[0])+"]"
 
