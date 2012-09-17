@@ -16,12 +16,14 @@ def enter(number):
 
 def compute(operator):
     global stack
-    if operator not in funcarg1:
-        res = functions[operator](stack[1],stack[0])
-        stack = list(itertools.chain([res],stack[2:5],[0]))
-    else:
+    if operator in funcarg0:
+        functions[operator]()
+    elif operator in funcarg1:
         res = functions[operator](stack[0])
         stack[0] = res
+    elif operator not in funcarg1:
+        res = functions[operator](stack[1],stack[0])
+        stack = list(itertools.chain([res],stack[2:5],[0]))
     if TRACE == True:
         print "["+str(stack[0])+"]"
 
@@ -60,7 +62,11 @@ def x(number):
     return s1
 
 def function(exp):
-    return lambda number: parse(exp)
+    return lambda: parse(exp)
+
+def disp(n):
+    print "["+str(n)+"]"
+    return n
 
 functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
              "**":op.pow, "//":op.floordiv, "%":op.mod, "#": lambda m,e:m**(1/e),
@@ -71,10 +77,12 @@ functions = {"+":op.add, "-":op.sub, "*":op.mul, "/":op.div,
              "tan":math.tan, "tanh":math.tanh, "atan":math.atan, "atanh":math.atanh,
              "hypot":math.hypot, "frexp":math.frexp, "ldexp":math.ldexp, "log":math.log,
              "rad":math.radians, "deg":math.degrees, "fac":math.factorial,
-             "=":assign, "trace":toggle_trace, "x":x}
+             "=":assign, "trace":toggle_trace, "x":x, ".":disp}
 funcarg1 = ["~","abs","neg","ceil","floor","sin","sinh","asin","asinh",
             "cos","cosh","acos","acosh","tan","tanh","atan","atanh","frexp",
-            "ldexp","rad","deg","fac","=","trace","x",]
+            "ldexp","rad","deg","fac","=","trace","x","."]
+
+funcarg0 = []
 
 def tokenizer(inp):
     tokens = inp.split(" ")
@@ -92,6 +100,8 @@ def tokenizer(inp):
         elif token in ["=","*","+","-","/","&","%","|","^","~","**","//","#",":"]:
             alltokens.append(token)
             alltokentypes.append(2)
+        elif token == '':
+            pass
         else:
             print "unknown expression."
     return alltokens, alltokentypes
@@ -117,23 +127,29 @@ def parse(inp):
                 elif token not in variables:
                     varstack.insert(0,token)
             else:
-                if token in functions.keys():
-                    compute(token)
+                if ":" in alltokens:
+                    if alltokens[i+1] == ":":
+                        funcname = token
+                        exp = alltokens[i+2:]
+                        expstr = ""
+                        for el in exp:
+                            expstr += el+" "
+                        print expstr
+                        functions.update({funcname:function(expstr)})
+                        funcarg0.append(funcname)
+                        break
+                    else:
+                        print "Syntax error: ':' at wrong position"
                 else:
-                    funcname = token
-                    exp = alltokens[i+2:]
-                    expstr = ""
-                    for el in exp:
-                        expstr += el+" "
-                    print expstr
-                    functions.update({funcname:function(expstr)})
-                    funcarg1.append(funcname)
-                    break
+                    if token in functions.keys():
+                        compute(token)
+                    else:
+                        print "function not found"
                     
     if TRACE == False:
         print "["+str(stack[0])+"]"
 
-if __name__ == "__main__":
+def loop():
     print "Zwiebel 0.01"
     while True:
         try:
@@ -141,3 +157,6 @@ if __name__ == "__main__":
             parse(inp)
         except EOFError:
             break
+
+if __name__ == "__main__":
+    loop()
